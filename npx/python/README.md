@@ -63,16 +63,7 @@ bun dev
 ```
 Open `http://localhost:3000` in your browser.
 
-## Quick Start
- 
- No installation needed! Just use `npx`:
- 
- ```bash
- # Review a GitHub PR
- npx asyncreview review --url https://github.com/org/repo/pull/123 -q "Any security concerns?"
- ```
- 
- ## CLI Usage
+## CLI Usage
 
 You can also use the tool directly from the terminal:
 
@@ -81,29 +72,26 @@ You can also use the tool directly from the terminal:
 - **One-shot Review**: `cr review -q "What does this repo do?"`
 - **Help**: `cr --help`
 
-### `npx asyncreview` - GitHub PR/Issue Review
- 
- Review GitHub PRs and Issues directly from the command line:
- 
- ```bash
- # Review a PR
- npx asyncreview review --url https://github.com/org/repo/pull/123 -q "Any security concerns?"
+### `asyncreview` - GitHub PR/Issue Review (New!)
+
+Review GitHub PRs and Issues directly from the command line:
+
+```bash
+# Review a PR
+asyncreview review --url https://github.com/org/repo/pull/123 -q "Any security concerns?"
 
 # Review with markdown output (great for docs/skills)
-# Review with markdown output (great for docs/skills)
-npx asyncreview review --url https://github.com/org/repo/pull/123 \
+asyncreview review --url https://github.com/org/repo/pull/123 \
   -q "Summarize the changes" \
   --output markdown
 
 # Quiet mode for scripting (no progress bars)
-# Quiet mode for scripting (no progress bars)
-npx asyncreview review --url https://github.com/org/repo/pull/123 \
+asyncreview review --url https://github.com/org/repo/pull/123 \
   -q "What does this PR do?" \
   --quiet --output json
 
 # Use a specific model
-# Use a specific model
-npx asyncreview review --url https://github.com/org/repo/pull/123 \
+asyncreview review --url https://github.com/org/repo/pull/123 \
   -q "Deep code review" \
   --model gemini-3.0-pro-preview
 ```

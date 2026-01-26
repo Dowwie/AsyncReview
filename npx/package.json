@@ -1,0 +1,48 @@
+{
+    "name": "asyncreview",
+    "version": "0.1.0",
+    "description": "AI-powered GitHub PR/Issue reviews from the command line",
+    "type": "module",
+    "bin": {
+        "asyncreview": "./dist/index.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "prepublishOnly": "npm run build"
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "python"
+    ],
+    "keywords": [
+        "github",
+        "pr",
+        "code-review",
+        "ai",
+        "gemini",
+        "llm",
+        "cli"
+    ],
+    "author": "AsyncFuncAI",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AsyncFuncAI/AsyncReview"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "commander": "^12.1.0",
+        "inquirer": "^9.2.12",
+        "chalk": "^5.3.0",
+        "ora": "^8.0.1"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.3",
+        "@types/node": "^20.11.0",
+        "@types/inquirer": "^9.0.7"
+    }
+}
