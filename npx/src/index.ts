@@ -23,6 +23,7 @@ program
     .option('--quiet', 'Suppress progress output')
     .option('-m, --model <model>', 'Model to use (e.g. gemini-3-pro-preview)')
     .option('--api <key>', 'Gemini API key (defaults to GEMINI_API_KEY env var)')
+    .option('--github-token <token>', 'GitHub token for private repos (defaults to GITHUB_TOKEN env var)')
     .action(async (options) => {
         await runReview(options);
     });

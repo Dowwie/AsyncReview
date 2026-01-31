@@ -1,5 +1,5 @@
 /**
- * API key management - handles env vars, CLI flags, and interactive prompts
+ * API key and GitHub token management - handles env vars, CLI flags, and interactive prompts
  */
 
 import inquirer from 'inquirer';
@@ -39,4 +39,40 @@ export async function getApiKey(cliApiKey?: string): Promise<string> {
     ]);
 
     return answers.apiKey;
+}
+
+export async function getGitHubToken(cliToken?: string, requireToken: boolean = false): Promise<string> {
+    // 1. Check --github-token flag first (highest priority)
+    if (cliToken) {
+        return cliToken;
+    }
+
+    // 2. Check environment variable
+    const envToken = process.env.GITHUB_TOKEN;
+    if (envToken) {
+        return envToken;
+    }
+
+    // 3. If not required, return empty string (for public repos)
+    if (!requireToken) {
+        return '';
+    }
+
+    // 4. No token found but required - prompt user
+    console.log(chalk.yellow('\n⚠️  No GitHub token found.\n'));
+    console.log(chalk.dim('A GitHub token is required for private repositories.'));
+    console.log(chalk.dim('You can set it via:'));
+    console.log(chalk.dim('  • --github-token <token> flag'));
+    console.log(chalk.dim('  • GITHUB_TOKEN environment variable\n'));
+
+    const answers = await inquirer.prompt([
+        {
+            type: 'password',
+            name: 'githubToken',
+            message: 'Enter your GitHub token (or press Enter to skip):',
+            mask: '•',
+        },
+    ]);
+
+    return answers.githubToken || '';
 }

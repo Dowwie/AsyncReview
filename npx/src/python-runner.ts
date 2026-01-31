@@ -158,6 +158,7 @@ export interface RunOptions {
     quiet: boolean;
     model?: string;
     apiKey: string;
+    githubToken?: string;
 }
 
 /**
@@ -205,6 +206,7 @@ export async function runPythonReview(options: RunOptions): Promise<string> {
             env: {
                 ...process.env,
                 GEMINI_API_KEY: options.apiKey,
+                ...(options.githubToken && { GITHUB_TOKEN: options.githubToken }),
                 PYTHONPATH: pythonPath,
                 // Ensure we don't inherit conflicting python env vars
                 VIRTUAL_ENV: path.dirname(path.dirname(pythonCmd))

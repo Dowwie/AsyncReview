@@ -4,7 +4,7 @@
 
 import chalk from 'chalk';
 import ora from 'ora';
-import { getApiKey } from './api-key.js';
+import { getApiKey, getGitHubToken } from './api-key.js';
 import {
     checkPython,
     checkAsyncReviewInstalled,
@@ -19,10 +19,11 @@ export interface ReviewOptions {
     quiet?: boolean;
     model?: string;
     api?: string;
+    githubToken?: string;
 }
 
 export async function runReview(options: ReviewOptions): Promise<void> {
-    const { url, question, output, quiet = false, model, api } = options;
+    const { url, question, output, quiet = false, model, api, githubToken } = options;
 
     try {
         // 1. Check Python availability
@@ -63,7 +64,10 @@ export async function runReview(options: ReviewOptions): Promise<void> {
         // 3. Get API key
         const apiKey = await getApiKey(api);
 
-        // 4. Run the review
+        // 4. Get GitHub token (optional for public repos)
+        const ghToken = await getGitHubToken(githubToken, false);
+
+        // 5. Run the review
         if (!quiet) {
             console.log(chalk.cyan(`\n🔍 Reviewing: ${url}`));
             console.log(chalk.dim(`   Question: ${question}\n`));
@@ -76,6 +80,7 @@ export async function runReview(options: ReviewOptions): Promise<void> {
             quiet,
             model,
             apiKey,
+            githubToken: ghToken,
         });
 
         // In quiet mode, we suppressed stdout during execution

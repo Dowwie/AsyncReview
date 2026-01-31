@@ -35,6 +35,23 @@ export GEMINI_API_KEY=your_key
 npx asyncreview review --url <url> -q "Review this"
 ```
 
+## GitHub Token (For Private Repos)
+
+For private repositories, you'll need to provide a GitHub token. The token can be provided in three ways (in order of priority):
+
+1. `--github-token <token>` flag
+2. `GITHUB_TOKEN` environment variable
+3. Interactive prompt (optional, if neither above is set)
+
+```bash
+# Using --github-token flag
+npx asyncreview review --url <url> -q "Review this" --github-token YOUR_GITHUB_TOKEN
+
+# Using environment variable
+export GITHUB_TOKEN=your_token
+npx asyncreview review --url <url> -q "Review this"
+```
+
 ## Options
 
 | Option | Description |
@@ -45,6 +62,7 @@ npx asyncreview review --url <url> -q "Review this"
 | `--quiet` | Suppress progress output |
 | `-m, --model <model>` | Model to use (default: gemini-3-pro-preview) |
 | `--api <key>` | Gemini API key |
+| `--github-token <token>` | GitHub token for private repos |
 
 ## Examples
 
@@ -60,6 +78,9 @@ npx asyncreview review -u https://github.com/org/repo/pull/123 -q "Document thes
 
 # Scripting with JSON
 npx asyncreview review -u https://github.com/org/repo/pull/123 -q "Review" --quiet -o json | jq .answer
+
+# Private repository review
+npx asyncreview review -u https://github.com/org/private-repo/pull/456 -q "Review this" --github-token ghp_xxxxxxxxxxxx
 ```
 
 ## License
