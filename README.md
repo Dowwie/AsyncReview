@@ -15,7 +15,7 @@ AsyncReview uses Recursive Language Models (RLM) to go beyond simple diff analys
 |   1. Analyze Diff       |       |   [Code] [Issues]       |
 |   2. Formulate Plan     |------>|   [PRs]  [Comments]     |
 |   3. Explore Codebase   |<------|                         |
-|   4. Verify in Sandbox  |       |                         |
+|   4. Verify via REPL    |       |                         |
 +-------------------------+       +-------------------------+
            │     ▲
            ▼     │ (Recursive Loop)
@@ -30,7 +30,7 @@ AsyncReview uses Recursive Language Models (RLM) to go beyond simple diff analys
 
 Most AI review tools only look at the lines changed in a Pull Request (the diff). This leads to shallow feedback and hallucinations about files that don't exist. AsyncReview takes a different approach.
 
-| Other Tools | AsyncReview |
+| Other Code Review Tools | AsyncReview |
 |-------------|-------------|
 | **Limited Context:** Only sees the git diff | **Full Context:** Can read any file in the repo to understand dependencies |
 | **Static Analysis:** Guesses how code works | **Agentic Analysis:** Can execute search queries and run verification scripts |
@@ -92,7 +92,7 @@ For private repos, you also need a GitHub token.
 
 AsyncReview is designed to be used as a **Skill** by other agentic providers. It allows them to "see" and "reason" about codebases they don't have local access to.
 
-### ⚡️ Easiest Way: Install via Skills CLI
+### Install via Skills CLI
 
 Run this command to automatically add AsyncReview to your agent's capabilities:
 
