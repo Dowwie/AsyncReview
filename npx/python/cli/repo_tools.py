@@ -289,6 +289,11 @@ class RepoTools:
         
         url = f"{GITHUB_API_BASE}/search/code"
         
+        # Debug logging for bundled mode troubleshooting
+        print(f"[DEBUG-SEARCH] Query: '{search_query}'")
+        print(f"[DEBUG-SEARCH] URL: {url}")
+        print(f"[DEBUG-SEARCH] GITHUB_TOKEN present: {bool(GITHUB_TOKEN)}")
+        
         try:
             async with _semaphore:
                 resp = await client.get(
@@ -300,10 +305,16 @@ class RepoTools:
                     params={"q": search_query, "per_page": 10},
                     timeout=30.0,
                 )
-        except Exception:
+            print(f"[DEBUG-SEARCH] Response status: {resp.status_code}")
+        except Exception as e:
+            print(f"[DEBUG-SEARCH] Exception: {e}")
             return []  # Soft fail
         
-        if _is_rate_limited(resp) or resp.status_code != 200:
+        if _is_rate_limited(resp):
+            print(f"[DEBUG-SEARCH] Rate limited!")
+            return []
+        if resp.status_code != 200:
+            print(f"[DEBUG-SEARCH] Non-200 response: {resp.text[:500]}")
             return []  # Soft fail
         
         data = resp.json()

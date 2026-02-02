@@ -7,12 +7,13 @@
         "strict": true,
         "outDir": "./dist",
         "rootDir": "./src",
-        "declaration": true,
+        "declaration": false,
         "skipLibCheck": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "sourceMap": true
     },
     "include": [
-        "src/**/*"
+        "src/launcher.ts"
     ],
     "exclude": [
         "node_modules",

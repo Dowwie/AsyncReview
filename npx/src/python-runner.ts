@@ -7,22 +7,38 @@ import chalk from 'chalk';
 import ora from 'ora';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// From dist/ we need to go up to npx/
-// Check if we are running from the bundled version (npx/python exists)
+// From dist/ we need to go up to npx/ (or app/ in bundled mode)
 const NPX_ROOT = path.resolve(__dirname, '..');
-const BUNDLED_PYTHON_ROOT = path.resolve(NPX_ROOT, 'python');
 
-// If 'python' directory exists in npx root, use it. Otherwise assume we are in the repo structure.
-import fs from 'fs';
-const IS_BUNDLED = fs.existsSync(BUNDLED_PYTHON_ROOT);
-const ASYNCREVIEW_ROOT = IS_BUNDLED ? BUNDLED_PYTHON_ROOT : path.resolve(NPX_ROOT, '..');
+// Bundled mode detection: In runtime cache, there's a `pydeps/` sibling to `app/`
+const PYDEPS_DIR = path.resolve(NPX_ROOT, '..', 'pydeps');
+const IS_BUNDLED = fs.existsSync(PYDEPS_DIR);
+
+// Python code always lives in npx/python/ (or app/python/ in bundled mode)
+const PYTHON_CODE_ROOT = path.resolve(NPX_ROOT, 'python');
+
+// Build PYTHONPATH: include pydeps if bundled, otherwise just the code root
+function getPythonPath(): string {
+    if (IS_BUNDLED) {
+        return `${PYDEPS_DIR}:${PYTHON_CODE_ROOT}`;
+    }
+    return process.env.PYTHONPATH
+        ? `${PYTHON_CODE_ROOT}:${process.env.PYTHONPATH}`
+        : PYTHON_CODE_ROOT;
+}
 
 interface PythonCheckResult {
     available: boolean;
     version?: string;
     pythonCmd: string;
+}
+
+interface DenoCheckResult {
+    available: boolean;
+    version?: string;
 }
 
 /**
@@ -31,8 +47,7 @@ interface PythonCheckResult {
  */
 export function checkPython(): PythonCheckResult {
     // Check for local venv Python first (in npx/.venv)
-    const npxDir = path.resolve(ASYNCREVIEW_ROOT, 'npx');
-    const localVenvPython = path.join(npxDir, '.venv', 'bin', 'python');
+    const localVenvPython = path.join(NPX_ROOT, '.venv', 'bin', 'python');
 
     // Check if the local venv python exists and is executable
     try {
@@ -67,23 +82,99 @@ export function checkPython(): PythonCheckResult {
 }
 
 /**
+ * Check if Deno is installed
+ */
+export function checkDeno(): DenoCheckResult {
+    try {
+        const result = spawnSync('deno', ['--version'], { encoding: 'utf-8' });
+        if (result.status === 0) {
+            // Extract version from output (first line contains "deno x.x.x")
+            const version = result.stdout.split('\n')[0].trim();
+            return { available: true, version };
+        }
+    } catch {
+        // Deno not found
+    }
+    return { available: false };
+}
+
+/**
+ * Install Deno using the official installation script
+ */
+export async function installDeno(quiet: boolean = false): Promise<boolean> {
+    const ora = (await import('ora')).default;
+    const spinner = !quiet ? ora('Installing Deno...').start() : null;
+
+    try {
+        return new Promise((resolve) => {
+            // Run the official Deno install script
+            const proc = spawn('sh', ['-c', 'curl -fsSL https://deno.land/install.sh | sh'], {
+                stdio: ['ignore', 'pipe', 'pipe'],
+                env: {
+                    ...process.env,
+                }
+            });
+
+            let stderr = '';
+            proc.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+
+            proc.on('close', (code) => {
+                if (code === 0) {
+                    // Add Deno to PATH for this session
+                    const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+                    const denoBinPath = path.join(homeDir, '.deno', 'bin');
+                    process.env.PATH = `${denoBinPath}:${process.env.PATH}`;
+
+                    if (spinner) spinner.succeed('Deno installed successfully');
+                    if (!quiet) {
+                        console.log(chalk.dim('\nNote: Add the following to your shell profile (~/.bashrc, ~/.zshrc, etc.):'));
+                        console.log(chalk.yellow(`  export PATH="${denoBinPath}:$PATH"`));
+                    }
+                    resolve(true);
+                } else {
+                    if (spinner) spinner.fail('Failed to install Deno');
+                    if (!quiet) {
+                        console.error(chalk.red('\nDeno installation failed:'));
+                        console.error(stderr);
+                    }
+                    resolve(false);
+                }
+            });
+
+            proc.on('error', (err) => {
+                if (spinner) spinner.fail('Failed to start Deno installation');
+                if (!quiet) {
+                    console.error(chalk.red('\nError:'), err.message);
+                }
+                resolve(false);
+            });
+        });
+    } catch (e) {
+        if (spinner) spinner.fail('Failed to install Deno');
+        return false;
+    }
+}
+
+/**
  * Check if asyncreview Python package is installed
  */
 export function checkAsyncReviewInstalled(pythonCmd: string): boolean {
-    // If we are using the local venv, check if it works
-    if (pythonCmd.includes('.venv')) {
-        try {
-            // Check for both cli module and rich (as a proxy for dependencies)
-            const result = spawnSync(pythonCmd, ['-c', 'import cli.main; import rich'], {
-                encoding: 'utf-8',
-                cwd: ASYNCREVIEW_ROOT,
-            });
-            return result.status === 0;
-        } catch {
-            return false;
-        }
+    try {
+        // Check for both cli module and rich (as a proxy for dependencies)
+        const result = spawnSync(pythonCmd, ['-c', 'import cli.main; import rich; import dspy'], {
+            encoding: 'utf-8',
+            cwd: PYTHON_CODE_ROOT,
+            env: {
+                ...process.env,
+                PYTHONPATH: getPythonPath(),
+            }
+        });
+        return result.status === 0;
+    } catch {
+        return false;
     }
-    return false;
 }
 
 /**
@@ -94,8 +185,8 @@ export function checkAsyncReviewInstalled(pythonCmd: string): boolean {
  */
 export async function installAsyncReview(systemPython: string, quiet: boolean = false): Promise<boolean> {
     const spinner = !quiet ? ora('Setting up isolated Python environment...').start() : null;
-    const npxDir = path.resolve(ASYNCREVIEW_ROOT, 'npx');
-    const venvDir = path.join(npxDir, '.venv');
+    // Venv always lives in npx/.venv, regardless of bundled vs dev mode
+    const venvDir = path.join(NPX_ROOT, '.venv');
 
     try {
         // 1. Create venv if it doesn't exist
@@ -108,25 +199,23 @@ export async function installAsyncReview(systemPython: string, quiet: boolean = 
         if (spinner) spinner.text = 'Installing dependencies (this may take a minute)...';
 
         return new Promise((resolve) => {
-            // If bundled, we install from '.', if dev, we install editable '-e .'
-            // Actually, for bundled, we just want 'pip install .' to install dependencies and the package itself
-            const installArgs = ['install', ASYNCREVIEW_ROOT];
-            if (!IS_BUNDLED) {
-                // In dev mode, use editable install
-                installArgs.push('-e');
-            }
-
-            // We need to be careful with the path passed to pip install
-            // If we pass ASYNCREVIEW_ROOT directly, it should work for both '.' and absolute paths
-
-            // Refined args:
-            const args = ['install'];
-            if (!IS_BUNDLED) args.push('-e');
-            args.push('.');
+            // Install from the Python code directory
+            const args = ['install', '.'];
 
             const proc = spawn(venvPip, args, {
-                cwd: ASYNCREVIEW_ROOT,
+                cwd: PYTHON_CODE_ROOT,
                 stdio: ['ignore', 'pipe', 'pipe']
+            });
+
+            let stdout = '';
+            let stderr = '';
+
+            proc.stdout.on('data', (data) => {
+                stdout += data.toString();
+            });
+
+            proc.stderr.on('data', (data) => {
+                stderr += data.toString();
             });
 
             proc.on('close', (code) => {
@@ -135,12 +224,22 @@ export async function installAsyncReview(systemPython: string, quiet: boolean = 
                     resolve(true);
                 } else {
                     if (spinner) spinner.fail('Failed to install dependencies');
+                    if (!quiet) {
+                        console.error(chalk.red('\nPip installation error:'));
+                        console.error(stderr || stdout);
+                    }
                     resolve(false);
                 }
             });
 
-            proc.on('error', () => {
+            proc.on('error', (err) => {
                 if (spinner) spinner.fail('Failed to start installation');
+                if (!quiet) {
+                    console.error(chalk.red('\nError spawning pip:'));
+                    console.error(err.message);
+                    console.error(chalk.dim(`Attempted to run: ${venvPip} ${args.join(' ')}`));
+                    console.error(chalk.dim(`CWD: ${PYTHON_CODE_ROOT}`));
+                }
                 resolve(false);
             });
         });
@@ -173,8 +272,7 @@ export async function runPythonReview(options: RunOptions): Promise<string> {
     // We need to trigger installation using the system python we found
     if (!pythonCheck.available) throw new Error("Python 3.11+ required to set up environment");
 
-    const npxDir = path.resolve(ASYNCREVIEW_ROOT, 'npx');
-    const venvPython = path.join(npxDir, '.venv', 'bin', 'python');
+    const venvPython = path.join(NPX_ROOT, '.venv', 'bin', 'python');
 
     // Force usage of venv python for execution
     const pythonCmd = checkAsyncReviewInstalled(venvPython) ? venvPython : pythonCheck.pythonCmd;
@@ -196,13 +294,11 @@ export async function runPythonReview(options: RunOptions): Promise<string> {
             args.push('--model', options.model);
         }
 
-        // Add PYTHONPATH so Python can find the cli module
-        const pythonPath = process.env.PYTHONPATH
-            ? `${ASYNCREVIEW_ROOT}:${process.env.PYTHONPATH}`
-            : ASYNCREVIEW_ROOT;
+        // Use centralized PYTHONPATH (handles bundled vs dev mode)
+        const pythonPath = getPythonPath();
 
         const proc = spawn(pythonCmd, args, {
-            cwd: ASYNCREVIEW_ROOT,
+            cwd: PYTHON_CODE_ROOT,
             env: {
                 ...process.env,
                 GEMINI_API_KEY: options.apiKey,

@@ -1,0 +1,7 @@
+# CLI Runtime Dependencies (minimal for npx asyncreview)
+# No dev/test tools - only what's needed to run `asyncreview review`
+
+dspy>=3.1.2
+rich>=13.0.0
+python-dotenv>=1.0.0
+httpx>=0.28.1

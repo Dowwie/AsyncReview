@@ -132,23 +132,24 @@ class VirtualReviewRunner:
         for name in ("httpx", "anthropic", "google", "urllib3"):
             logging.getLogger(name).setLevel(logging.WARNING)
         
-        # Configure DSPy with specified model
+        # Configure DSPy with specified model (cache=False to prevent disk caching)
         model_name = self.model
         if not model_name.startswith("gemini/"):
             model_name = f"gemini/{model_name}"
         
-        self._lm = dspy.LM(model_name)
+        self._lm = dspy.LM(model_name, cache=False)
         
         # Create RLM with custom interpreter that has Deno 2.x fix
         deno_command = build_deno_command()
         interpreter = PythonInterpreter(deno_command=deno_command)
         
         # Standard signature
+        sub_model = f"gemini/{SUB_MODEL}" if not SUB_MODEL.startswith("gemini/") else SUB_MODEL
         self._rlm = dspy.RLM(
             signature="context, question -> answer, sources",
             max_iterations=MAX_ITERATIONS,
             max_llm_calls=MAX_LLM_CALLS,
-            sub_lm=dspy.LM(f"gemini/{SUB_MODEL}" if not SUB_MODEL.startswith("gemini/") else SUB_MODEL),
+            sub_lm=dspy.LM(sub_model, cache=False),
             verbose=not self.quiet,
             interpreter=interpreter,
         )

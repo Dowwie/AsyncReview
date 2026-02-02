@@ -41,7 +41,9 @@ export async function getApiKey(cliApiKey?: string): Promise<string> {
     return answers.apiKey;
 }
 
-export async function getGitHubToken(cliToken?: string, requireToken: boolean = false): Promise<string> {
+export async function getGitHubToken(cliToken?: string, requireToken: boolean = true): Promise<string> {
+    const { spawnSync } = await import('child_process');
+
     // 1. Check --github-token flag first (highest priority)
     if (cliToken) {
         return cliToken;
@@ -53,15 +55,31 @@ export async function getGitHubToken(cliToken?: string, requireToken: boolean = 
         return envToken;
     }
 
-    // 3. If not required, return empty string (for public repos)
+    // 3. Try to get token from GitHub CLI (gh auth token)
+    try {
+        const result = spawnSync('gh', ['auth', 'token'], {
+            encoding: 'utf-8',
+            timeout: 5000,
+        });
+        if (result.status === 0 && result.stdout.trim()) {
+            const ghToken = result.stdout.trim();
+            // Silently use the token from gh CLI
+            return ghToken;
+        }
+    } catch {
+        // gh CLI not available or not authenticated
+    }
+
+    // 4. If not required, return empty string (for public repos that don't need code search)
     if (!requireToken) {
         return '';
     }
 
-    // 4. No token found but required - prompt user
+    // 5. No token found but required - prompt user
     console.log(chalk.yellow('\n⚠️  No GitHub token found.\n'));
-    console.log(chalk.dim('A GitHub token is required for private repositories.'));
+    console.log(chalk.dim('A GitHub token is required for the SEARCH_CODE feature.'));
     console.log(chalk.dim('You can set it via:'));
+    console.log(chalk.dim('  • gh auth login (recommended - GitHub CLI)'));
     console.log(chalk.dim('  • --github-token <token> flag'));
     console.log(chalk.dim('  • GITHUB_TOKEN environment variable\n'));
 
@@ -69,10 +87,16 @@ export async function getGitHubToken(cliToken?: string, requireToken: boolean = 
         {
             type: 'password',
             name: 'githubToken',
-            message: 'Enter your GitHub token (or press Enter to skip):',
+            message: 'Enter your GitHub token:',
             mask: '•',
+            validate: (input: string) => {
+                if (!input || input.trim().length === 0) {
+                    return 'GitHub token is required for code search';
+                }
+                return true;
+            },
         },
     ]);
 
-    return answers.githubToken || '';
+    return answers.githubToken;
 }

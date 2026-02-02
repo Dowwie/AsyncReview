@@ -1,0 +1,115 @@
+# AsyncReview Release Workflow
+#
+# Triggered on version tags (v*)
+# Builds runtime for all platforms and publishes to GitHub Releases
+# (npm publishing is done locally via `make publish-npm`)
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.12'
+  DENO_VERSION: '2.6.6'
+
+jobs:
+  # Build runtime for each platform
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-14          # Apple Silicon
+            platform: darwin-arm64
+          - os: macos-13          # Intel Mac
+            platform: darwin-x64
+          - os: ubuntu-latest
+            platform: linux-x64
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Build runtime
+        run: |
+          chmod +x scripts/build_runtime_local.sh
+          ./scripts/build_runtime_local.sh ${{ steps.version.outputs.VERSION }}
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-${{ matrix.platform }}
+          path: dist/asyncreview-runtime-v${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}.tar.gz
+
+  # Create GitHub Release with all platform artifacts
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: runtime-*
+          merge-multiple: true
+      
+      - name: List artifacts
+        run: ls -la dist/
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: AsyncReview v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## AsyncReview v${{ steps.version.outputs.VERSION }}
+            
+            ### Installation
+            ```bash
+            npx asyncreview review --url <github-pr-url> -q "your question"
+            ```
+            
+            ### Platform Runtimes
+            The runtime is automatically downloaded on first use. Supported platforms:
+            - macOS (Apple Silicon) - `darwin-arm64`
+            - macOS (Intel) - `darwin-x64`
+            - Linux (x64) - `linux-x64`
+            
+            ### Manual Download
+            If you prefer to install manually, download the appropriate tarball for your platform.
+            
+            ---
+            
+            **Note:** After GitHub Release is created, publish to npm locally with:
+            ```bash
+            make publish-npm
+            ```
+          files: dist/*.tar.gz
+          fail_on_unmatched_files: true
