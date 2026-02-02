@@ -59,9 +59,10 @@ cp "$ROOT_DIR/npx/python/pyproject.toml" "$STAGE_DIR/app/python/"
 # 3) Install python deps into pydeps (no venv)
 echo "==> Installing python deps into pydeps/ (no venv)"
 # Find a working system python with pip (avoid venv issues)
+# Check python3 from PATH first (GitHub Actions sets this up), then homebrew, then system
 SYS_PYTHON=""
-for py in /opt/homebrew/opt/python@3.12/bin/python3.12 /opt/homebrew/bin/python3 /usr/local/bin/python3 /usr/bin/python3; do
-  if [ -x "$py" ] && "$py" -m pip --version >/dev/null 2>&1; then
+for py in python3 python3.12 /opt/homebrew/opt/python@3.12/bin/python3.12 /opt/homebrew/bin/python3 /usr/local/bin/python3 /usr/bin/python3; do
+  if command -v "$py" >/dev/null 2>&1 && "$py" -m pip --version >/dev/null 2>&1; then
     SYS_PYTHON="$py"
     break
   fi
@@ -73,7 +74,7 @@ fi
 echo "==> Using Python: $SYS_PYTHON"
 # Create a temporary requirements file pointing to the python package
 cat > "$STAGE_DIR/pydeps_install.txt" <<EOF
-dspy>=2.6.27,<3.0.0
+dspy>=2.5.40,<2.6.0
 rich>=13.0.0
 python-dotenv>=1.0.0
 httpx>=0.28.1
