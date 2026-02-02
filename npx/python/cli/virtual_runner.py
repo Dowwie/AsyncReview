@@ -30,32 +30,53 @@ You can access ANY file in the repository (not just the diff). Use these command
 
 ### STEP 1: Find file paths with SEARCH_CODE
 ```python
-print("SEARCH_CODE:rlm.py")  # Search for files by name
-print("SEARCH_CODE:enable_tool_optimization")  # Search for code patterns
+# CORRECT - no quotes around the search term after the colon
+print("SEARCH_CODE:rlm.py")
+print("SEARCH_CODE:enable_tool_optimization")
+print("SEARCH_CODE:llm_query_batched")
+
+# WRONG - do NOT add extra quotes or parentheses
+# print("SEARCH_CODE:rlm.py")")  # ❌ Extra quote/paren
+# print("SEARCH_CODE:'rlm.py'")  # ❌ Quoted search term
 ```
 Results appear in `search_results` on your NEXT step.
 
 ### STEP 2: Fetch files with FETCH_FILE
 ```python
-print("FETCH_FILE:dspy/predict/rlm.py")  # Exact path required
+# CORRECT - exact path, no extra quotes
+print("FETCH_FILE:dspy/predict/rlm.py")
+print("FETCH_FILE:tests/predict/test_rlm.py")
+
+# WRONG - do NOT add extra quotes or parentheses
+# print("FETCH_FILE:dspy/predict/rlm.py")")  # ❌ Extra quote/paren
 ```
 Content appears in `repo_files['dspy/predict/rlm.py']` on your NEXT step.
 
 ### STEP 3: List directories with LIST_DIR
 ```python
-print("LIST_DIR:dspy/predict/")
+# CORRECT - use LIST_DIR (NOT LIST_FILES!)
+print("LIST_DIR:dspy/predict")
+print("LIST_DIR:dspy/predict/")  # trailing slash is OK
+print("LIST_DIR:tests")
+
+# WRONG - do NOT use these non-existent commands
+# print("LIST_FILES:dspy/predict")  # ❌ No such command as LIST_FILES
+# print("LIST_DIRECTORY:dspy/predict")  # ❌ Wrong name
+# print("LS:dspy/predict")  # ❌ Not supported
 ```
-Entries appear in `repo_dirs['dspy/predict/']` on your NEXT step.
+Entries appear in `repo_dirs['dspy/predict']` on your NEXT step as a list of dicts with 'path', 'type', and 'size'.
 
 ### IMPORTANT NOTES:
 - Commands print EXACTLY as shown, the system intercepts them
+- The command is `LIST_DIR` not `LIST_FILES` or `LIST_DIRECTORY`
 - Do NOT try os.walk() or open() - those won't work
 - Data becomes available on your NEXT step
 - Check `repo_files`, `repo_dirs`, `search_results` dicts
+- SYNTAX: Make sure print statements are properly closed with exactly ONE `")`
 
 ### WORKFLOW EXAMPLE (finding if rlm.py contains X):
-Step 1: `print("SEARCH_CODE:rlm.py")` → find the path
-Step 2: Check `search_results` for path, then `print("FETCH_FILE:dspy/predict/rlm.py")`
+Step 1: `print("LIST_DIR:dspy/predict")` → get directory contents
+Step 2: Check `repo_dirs['dspy/predict']` for file list, then `print("FETCH_FILE:dspy/predict/rlm.py")`
 Step 3: Check `repo_files['dspy/predict/rlm.py']` for content
 """
 
@@ -249,18 +270,21 @@ class VirtualReviewRunner:
         # Prepend tool instructions to question (treated as instructions, not data)
         augmented_question = AGENTIC_TOOLS_PROMPT + "\n\n---\n\n**USER QUESTION:** " + question
         
-        input_args = {
-            "context": context,
-            "question": augmented_question,
-        }
-        
-        variables = rlm._build_variables(**input_args)
-        
         with dspy.context(lm=self._lm):
             with rlm._interpreter_context(execution_tools) as repl:
                 history = REPLHistory()
                 
                 for iteration in range(rlm.max_iterations):
+                    # Rebuild variables with current tool state so LLM sees available data
+                    input_args = {
+                        "context": context,
+                        "question": augmented_question,
+                        "repo_files": self._repo_files,
+                        "repo_dirs": self._repo_dirs,
+                        "search_results": self._search_results,
+                    }
+                    variables = rlm._build_variables(**input_args)
+                    
                     variables_info = [variable.format() for variable in variables]
                     pred = await rlm.generate_action.acall(
                         variables_info=variables_info,

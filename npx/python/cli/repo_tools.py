@@ -247,10 +247,12 @@ class RepoTools:
         # Directory listing
         entries = []
         for item in data:
+            # Use 0 instead of None for directory size to avoid JSON null -> Pyodide issues
+            size = item.get("size") if item.get("type") == "file" else 0
             entries.append({
                 "path": item.get("path", ""),
                 "type": item.get("type", "file"),
-                "size": item.get("size") if item.get("type") == "file" else None,
+                "size": size,
             })
         return entries
     
