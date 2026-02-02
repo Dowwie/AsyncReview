@@ -26,7 +26,7 @@ jobs:
         include:
           - os: macos-14          # Apple Silicon
             platform: darwin-arm64
-          - os: macos-13          # Intel Mac
+          - os: macos-15          # Intel Mac (macos-13 retired)
             platform: darwin-x64
           - os: ubuntu-latest
             platform: linux-x64
