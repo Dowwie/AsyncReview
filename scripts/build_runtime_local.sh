@@ -36,8 +36,8 @@ echo "==> Platform: $PLATFORM_KEY"
 echo "==> Version: $VERSION"
 
 # 1) Copy Node.js CLI (compiled TypeScript from npx/dist/)
-echo "==> Building npx package"
-(cd "$ROOT_DIR/npx" && npm install && npm run build)
+echo "==> Building npx package for runtime"
+(cd "$ROOT_DIR/npx" && npm install && npx tsc -p tsconfig.runtime.json)
 
 echo "==> Copying Node.js CLI"
 cp -R "$ROOT_DIR/npx/dist" "$STAGE_DIR/app/"
@@ -46,6 +46,20 @@ cp "$ROOT_DIR/npx/package.json" "$STAGE_DIR/app/"
 # Copy node_modules (npm dependencies like chalk, ora, commander, inquirer)
 # Install only production dependencies for the runtime
 echo "==> Installing Node.js runtime dependencies"
+# Create a package.json for runtime with all required deps
+cat > "$STAGE_DIR/app/package.json" <<'PKGJSON'
+{
+  "name": "asyncreview-runtime",
+  "type": "module",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "inquirer": "^9.2.12",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1",
+    "tar": "^7.0.0"
+  }
+}
+PKGJSON
 (cd "$STAGE_DIR/app" && npm install --production --no-save)
 
 # 2) Copy python CLI app code (npx/python/cli/ and npx/python/cr/)
