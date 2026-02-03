@@ -24,61 +24,53 @@ from .repo_tools import RepoTools
 
 # Tool usage instructions for the model - simplified and clear
 AGENTIC_TOOLS_PROMPT = """
-## REPOSITORY ACCESS COMMANDS
+## AVAILABLE COMMANDS (USE ONLY THESE!)
 
-You can access ANY file in the repository (not just the diff). Use these commands:
+⚠️ **ONLY these 3 commands exist. Any other command will NOT work:**
 
-### STEP 1: Find file paths with SEARCH_CODE
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `SEARCH_CODE:term` | Find files by name/content | `print("SEARCH_CODE:rlm.py")` |
+| `FETCH_FILE:path` | Read file contents | `print("FETCH_FILE:dspy/predict/rlm.py")` |
+| `LIST_DIR:path` | List directory contents | `print("LIST_DIR:dspy/predict")` |
+
+### ❌ FORBIDDEN - These commands DO NOT EXIST:
+- `READ_FILE` - WRONG! Use `FETCH_FILE` instead
+- `READ_CODE` - WRONG! Use `FETCH_FILE` instead  
+- `GET_FILE` - WRONG! Use `FETCH_FILE` instead
+- `LIST_FILES` - WRONG! Use `LIST_DIR` instead
+- `open()` / `os.path` - WRONG! Won't work in sandbox
+- Any other command not listed above
+
+---
+
+### SEARCH_CODE - Find files by name or content
 ```python
-# CORRECT - no quotes around the search term after the colon
 print("SEARCH_CODE:rlm.py")
 print("SEARCH_CODE:enable_tool_optimization")
-print("SEARCH_CODE:llm_query_batched")
-
-# WRONG - do NOT add extra quotes or parentheses
-# print("SEARCH_CODE:rlm.py")")  # ❌ Extra quote/paren
-# print("SEARCH_CODE:'rlm.py'")  # ❌ Quoted search term
 ```
 Results appear in `search_results` on your NEXT step.
 
-### STEP 2: Fetch files with FETCH_FILE
+### FETCH_FILE - Read file contents (NOT read_file, NOT read_code!)
 ```python
-# CORRECT - exact path, no extra quotes
 print("FETCH_FILE:dspy/predict/rlm.py")
 print("FETCH_FILE:tests/predict/test_rlm.py")
-
-# WRONG - do NOT add extra quotes or parentheses
-# print("FETCH_FILE:dspy/predict/rlm.py")")  # ❌ Extra quote/paren
 ```
 Content appears in `repo_files['dspy/predict/rlm.py']` on your NEXT step.
 
-### STEP 3: List directories with LIST_DIR
+### LIST_DIR - List directory contents  
 ```python
-# CORRECT - use LIST_DIR (NOT LIST_FILES!)
 print("LIST_DIR:dspy/predict")
-print("LIST_DIR:dspy/predict/")  # trailing slash is OK
 print("LIST_DIR:tests")
-
-# WRONG - do NOT use these non-existent commands
-# print("LIST_FILES:dspy/predict")  # ❌ No such command as LIST_FILES
-# print("LIST_DIRECTORY:dspy/predict")  # ❌ Wrong name
-# print("LS:dspy/predict")  # ❌ Not supported
 ```
-Entries appear in `repo_dirs['dspy/predict']` on your NEXT step as a list of dicts with 'path', 'type', and 'size'.
+Entries appear in `repo_dirs['dspy/predict']` on your NEXT step.
 
-### IMPORTANT NOTES:
-- Commands print EXACTLY as shown, the system intercepts them
-- The command is `LIST_DIR` not `LIST_FILES` or `LIST_DIRECTORY`
-- Do NOT try os.walk() or open() - those won't work
-- Data becomes available on your NEXT step
-- Check `repo_files`, `repo_dirs`, `search_results` dicts
-- SYNTAX: Make sure print statements are properly closed with exactly ONE `")`
-
-### WORKFLOW EXAMPLE (finding if rlm.py contains X):
-Step 1: `print("LIST_DIR:dspy/predict")` → get directory contents
-Step 2: Check `repo_dirs['dspy/predict']` for file list, then `print("FETCH_FILE:dspy/predict/rlm.py")`
-Step 3: Check `repo_files['dspy/predict/rlm.py']` for content
+### WORKFLOW:
+1. `print("SEARCH_CODE:filename")` → find paths
+2. `print("FETCH_FILE:path/to/file.py")` → read content
+3. Check `repo_files['path/to/file.py']` in next step
 """
+
 
 
 

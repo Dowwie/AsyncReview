@@ -1,6 +1,6 @@
 {
     "name": "asyncreview",
-    "version": "0.5.7",
+    "version": "0.5.8",
     "description": "AI-powered GitHub PR/Issue reviews from the command line",
     "type": "module",
     "bin": {
