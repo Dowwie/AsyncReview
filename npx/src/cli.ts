@@ -16,16 +16,17 @@ import {
 
 export interface ReviewOptions {
     url: string;
-    question: string;
+    question?: string;
     output: string;
     quiet?: boolean;
     model?: string;
     api?: string;
     githubToken?: string;
+    expert?: boolean;
 }
 
 export async function runReview(options: ReviewOptions): Promise<void> {
-    const { url, question, output, quiet = false, model, api, githubToken } = options;
+    const { url, question, output, quiet = false, model, api, githubToken, expert = false } = options;
 
     try {
 
@@ -38,7 +39,11 @@ export async function runReview(options: ReviewOptions): Promise<void> {
         // 6. Run the review
         if (!quiet) {
             console.log(chalk.cyan(`\n 🔍 Reviewing: ${url}`));
-            console.log(chalk.dim(`   Question: ${question}\n`));
+            if (expert) {
+                console.log(chalk.cyan(`   Mode: Expert Code Review (SOLID, Security, Code Quality)\n`));
+            } else if (question) {
+                console.log(chalk.dim(`   Question: ${question}\n`));
+            }
         }
 
         const result = await runPythonReview({
@@ -49,6 +54,7 @@ export async function runReview(options: ReviewOptions): Promise<void> {
             model,
             apiKey,
             githubToken: ghToken,
+            expert,
         });
 
         // In quiet mode, we suppressed stdout during execution

@@ -26,6 +26,7 @@ from . import __version__
 from .github_fetcher import parse_github_url
 from .output_formatter import format_output
 from .virtual_runner import VirtualReviewRunner
+from .expert_prompts import get_expert_prompt
 
 
 console = Console()
@@ -67,10 +68,11 @@ def print_error(message: str):
 
 async def run_review(
     url: str,
-    question: str,
+    question: str | None = None,
     output_format: str = "text",
     quiet: bool = False,
     model: str | None = None,
+    expert: bool = False,
 ):
     """Run a review on a GitHub URL."""
     # Parse URL first to validate
@@ -80,10 +82,24 @@ async def run_review(
         print_error(str(e))
         sys.exit(1)
     
+    # Determine the question to use
+    if expert:
+        actual_question = get_expert_prompt(question)
+        review_mode = "Expert Review"
+    elif question:
+        actual_question = question
+        review_mode = "Review"
+    else:
+        print_error("Either --question or --expert is required")
+        sys.exit(1)
+    
     if not quiet:
         type_label = "PR" if url_type == "pr" else "Issue"
         print_info(f"Reviewing {type_label}: {owner}/{repo}#{number}")
-        print_info(f"Question: {question}")
+        if expert:
+            print_info(f"Mode: Expert Code Review (SOLID, Security, Code Quality)")
+        else:
+            print_info(f"Question: {actual_question}")
         console.print()
     
     # Create runner
@@ -94,7 +110,7 @@ async def run_review(
     )
     
     try:
-        answer, sources, metadata = await runner.review(url, question)
+        answer, sources, metadata = await runner.review(url, actual_question)
     except Exception as e:
         print_error(f"Review failed: {e}")
         sys.exit(1)
@@ -156,8 +172,14 @@ Examples:
     review_parser.add_argument(
         "--question", "-q",
         type=str,
-        required=True,
-        help="Question to ask about the PR/Issue",
+        required=False,
+        default=None,
+        help="Question to ask about the PR/Issue (optional with --expert)",
+    )
+    review_parser.add_argument(
+        "--expert",
+        action="store_true",
+        help="Run expert code review (SOLID, Security, Performance, Code Quality)",
     )
     review_parser.add_argument(
         "--output", "-o",
@@ -187,6 +209,7 @@ Examples:
             output_format=args.output,
             quiet=args.quiet,
             model=args.model,
+            expert=args.expert,
         ))
     else:
         parser.print_help()

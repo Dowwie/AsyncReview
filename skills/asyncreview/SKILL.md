@@ -145,6 +145,7 @@ npx asyncreview review --url <URL> -q "question"
 
 ```bash
 npx asyncreview review --url <PR_URL> -q "question"   # Review a PR
+npx asyncreview review --url <PR_URL> --expert        # Expert code review
 npx asyncreview review --url <PR_URL> --output markdown     # Markdown output
 ```
 
@@ -257,3 +258,27 @@ npx asyncreview review \
 | Pretty | (default) | Rich terminal output with boxes |
 | Markdown | `--output markdown` or `-o markdown` | Markdown formatted |
 | JSON | `--output json` or `-o json` | Machine-readable |
+
+## Expert Code Review
+
+Use `--expert` flag for comprehensive PR reviews covering SOLID principles, security, performance, and code quality:
+
+```bash
+# Full expert review (no question needed)
+npx asyncreview review --url <PR_URL> --expert
+
+# Expert review with additional custom question
+npx asyncreview review --url <PR_URL> --expert -q "Also check for breaking API changes"
+```
+
+**Expert review analyzes:**
+- **SOLID Principles** - SRP, OCP, LSP, ISP, DIP violations
+- **Security** - XSS, injection, auth gaps, race conditions, secrets
+- **Code Quality** - Error handling, N+1 queries, boundary conditions
+- **Removal Candidates** - Dead code, unused imports
+
+**Output includes:**
+- Severity-tagged findings (P0 Critical → P3 Low)
+- Suggested fixes for P0/P1 issues
+- Overall assessment: APPROVE / REQUEST_CHANGES / COMMENT
+

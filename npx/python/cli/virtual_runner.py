@@ -69,6 +69,21 @@ Entries appear in `repo_dirs['dspy/predict']` on your NEXT step.
 1. `print("SEARCH_CODE:filename")` → find paths
 2. `print("FETCH_FILE:path/to/file.py")` → read content
 3. Check `repo_files['path/to/file.py']` in next step
+
+---
+
+## EXPERT REVIEW CHECKLISTS (for --expert mode)
+
+When performing expert code reviews, you can fetch these local checklists for detailed guidance:
+
+| Category | Command | Use For |
+|----------|---------|---------|
+| SOLID | `print("FETCH_FILE:checklists/solid-checklist.md")` | Design principle violations, code smells |
+| Security | `print("FETCH_FILE:checklists/security-checklist.md")` | XSS, injection, auth gaps, race conditions |
+| Code Quality | `print("FETCH_FILE:checklists/code-quality-checklist.md")` | Error handling, performance, boundaries |
+| Removal Plan | `print("FETCH_FILE:checklists/removal-plan.md")` | Dead code identification template |
+
+Fetch the relevant checklists based on what the PR changes require. You decide which categories apply.
 """
 
 
@@ -106,6 +121,26 @@ class VirtualReviewRunner:
         self._repo_files: dict[str, str] = {}  # Fetched file contents
         self._repo_dirs: dict[str, list] = {}  # Directory listings
         self._search_results: list[dict] = []  # Search results
+    
+    def _load_local_checklist(self, path: str) -> str:
+        """Load a bundled checklist file from the CLI package.
+        
+        Args:
+            path: Path like 'checklists/solid-checklist.md'
+            
+        Returns:
+            Content of the checklist file, or error message if not found
+        """
+        from pathlib import Path
+        
+        # Get the directory where this module is located
+        cli_dir = Path(__file__).parent
+        checklist_path = cli_dir / path
+        
+        if checklist_path.exists():
+            return checklist_path.read_text()
+        else:
+            return f"[Error] Checklist not found: {path}"
     
     def _ensure_configured(self):
         """Configure DSPy and RLM on first use."""
@@ -219,7 +254,13 @@ class VirtualReviewRunner:
             if path not in self._repo_files:
                 if not self.quiet:
                     print(f"[DEBUG] Fetching file: {path}")
-                content = await self._repo_tools.fetch_file(path)
+                
+                # Handle local checklists (bundled with CLI)
+                if path.startswith("checklists/"):
+                    content = self._load_local_checklist(path)
+                else:
+                    content = await self._repo_tools.fetch_file(path)
+                
                 self._repo_files[path] = content
                 if not self.quiet:
                     print(f"[DEBUG] Fetched {path}: {len(content)} chars, starts with: {content[:100]}...")

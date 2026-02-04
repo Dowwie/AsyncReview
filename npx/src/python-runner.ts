@@ -252,12 +252,13 @@ export async function installAsyncReview(systemPython: string, quiet: boolean = 
 
 export interface RunOptions {
     url: string;
-    question: string;
+    question?: string;
     output: string;
     quiet: boolean;
     model?: string;
     apiKey: string;
     githubToken?: string;
+    expert?: boolean;
 }
 
 /**
@@ -282,9 +283,18 @@ export async function runPythonReview(options: RunOptions): Promise<string> {
             '-m', 'cli.main',
             'review',
             '--url', options.url,
-            '-q', options.question,
             '--output', options.output,
         ];
+
+        // Add question if provided
+        if (options.question) {
+            args.push('-q', options.question);
+        }
+
+        // Add expert flag if enabled
+        if (options.expert) {
+            args.push('--expert');
+        }
 
         if (options.quiet) {
             args.push('--quiet');
