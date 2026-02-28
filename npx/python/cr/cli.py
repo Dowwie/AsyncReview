@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI for Gemini RLM Codebase Review Tool."""
+"""CLI for Claude RLM Codebase Review Tool."""
 
 import argparse
 import sys
@@ -136,7 +136,7 @@ def run_one_shot(repo_path: Path, question: str):
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Gemini RLM Codebase Review Tool",
+        description="Claude RLM Codebase Review Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 

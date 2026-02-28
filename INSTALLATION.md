@@ -90,13 +90,13 @@ cp .env.example .env
 
 ```bash
 # .env file
-GEMINI_API_KEY=your_gemini_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 GITHUB_TOKEN=your_github_token_here  # Optional for npx, required for web UI
 ```
 
 **Getting your API keys:**
 
-- **Gemini API Key**: Get from [Google AI Studio](https://aistudio.google.com/app/apikey)
+- **Anthropic API Key**: Get from the [Anthropic Console](https://console.anthropic.com/)
 - **GitHub Token**: 
   - Quick: `gh auth token` (if you have GitHub CLI)
   - Manual: [Create Personal Access Token](https://github.com/settings/tokens)

@@ -12,22 +12,22 @@ export async function getApiKey(cliApiKey?: string): Promise<string> {
     }
 
     // 2. Check environment variable
-    const envKey = process.env.GEMINI_API_KEY;
+    const envKey = process.env.ANTHROPIC_API_KEY;
     if (envKey) {
         return envKey;
     }
 
     // 3. No API key found - prompt user
-    console.log(chalk.yellow('\n⚠️  No Gemini API key found.\n'));
+    console.log(chalk.yellow('\n⚠️  No Anthropic API key found.\n'));
     console.log(chalk.dim('You can set it via:'));
     console.log(chalk.dim('  • --api <key> flag'));
-    console.log(chalk.dim('  • GEMINI_API_KEY environment variable\n'));
+    console.log(chalk.dim('  • ANTHROPIC_API_KEY environment variable\n'));
 
     const answers = await inquirer.prompt([
         {
             type: 'password',
             name: 'apiKey',
-            message: 'Enter your Gemini API key:',
+            message: 'Enter your Anthropic API key:',
             mask: '•',
             validate: (input: string) => {
                 if (!input || input.trim().length === 0) {

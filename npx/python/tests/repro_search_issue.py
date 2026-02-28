@@ -24,7 +24,7 @@ async def repro():
     print("SEARCH_CODE REPRODUCTION TEST")
     print("=" * 80)
     
-    runner = VirtualReviewRunner(model="gemini-3-flash-preview", quiet=False)
+    runner = VirtualReviewRunner(model="claude-sonnet-4-6", quiet=False)
     runner._ensure_configured()
     
     # Intercept acall to debug variable state
@@ -125,9 +125,9 @@ Step 2: On the next iteration, check the search_results variable and print:
 
 if __name__ == "__main__":
     # Check for API key
-    if not os.getenv("GEMINI_API_KEY"):
-        print("ERROR: GEMINI_API_KEY not set")
-        print("Set it with: export GEMINI_API_KEY='your-key'")
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        print("ERROR: ANTHROPIC_API_KEY not set")
+        print("Set it with: export ANTHROPIC_API_KEY='your-key'")
         exit(1)
     
     asyncio.run(repro())

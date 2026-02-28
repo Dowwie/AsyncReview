@@ -16,14 +16,14 @@ npx asyncreview review --url https://github.com/org/repo/pull/123 -q "What does 
 
 - **Node.js 18+**
 - **Python 3.11+** (auto-detected)
-- **Gemini API Key** (prompted if not set)
+- **Anthropic API Key** (prompted if not set)
 
 ## API Key
 
-The Gemini API key can be provided in three ways (in order of priority):
+The Anthropic API key can be provided in three ways (in order of priority):
 
 1. `--api <key>` flag
-2. `GEMINI_API_KEY` environment variable
+2. `ANTHROPIC_API_KEY` environment variable
 3. Interactive prompt (if neither above is set)
 
 ```bash
@@ -31,7 +31,7 @@ The Gemini API key can be provided in three ways (in order of priority):
 npx asyncreview review --url <url> -q "Review this" --api YOUR_API_KEY
 
 # Using environment variable
-export GEMINI_API_KEY=your_key
+export ANTHROPIC_API_KEY=your_key
 npx asyncreview review --url <url> -q "Review this"
 ```
 
@@ -60,8 +60,8 @@ npx asyncreview review --url <url> -q "Review this"
 | `-q, --question <question>` | Question to ask (required) |
 | `-o, --output <format>` | Output format: `text`, `markdown`, `json` (default: text) |
 | `--quiet` | Suppress progress output |
-| `-m, --model <model>` | Model to use (default: gemini-3-pro-preview) |
-| `--api <key>` | Gemini API key |
+| `-m, --model <model>` | Model to use (default: claude-sonnet-4-6) |
+| `--api <key>` | Anthropic API key |
 | `--github-token <token>` | GitHub token for private repos |
 
 ## Examples

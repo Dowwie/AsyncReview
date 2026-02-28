@@ -1,17 +1,18 @@
 [project]
 name = "cr"
 version = "0.1.0"
-description = "Gemini RLM Codebase Review Tool"
+description = "Claude RLM Codebase Review Tool"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [
     { name = "Codebase Review Team" }
 ]
-keywords = ["gemini", "llm", "code-review", "dspy", "rlm"]
+keywords = ["claude", "anthropic", "llm", "code-review", "dspy", "rlm"]
 
 dependencies = [
     "dspy>=3.1.2",
+    "anthropic>=0.40.0",
     "rich>=13.0.0",
     "python-dotenv>=1.0.0",
     "httpx>=0.28.1",

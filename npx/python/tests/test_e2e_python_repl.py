@@ -72,7 +72,7 @@ async def test_search_code_pattern_detection():
 @pytest.mark.asyncio
 async def test_tool_request_processing_limits():
     """Test that tool request processing respects limits (avoid infinite loops)."""
-    runner = VirtualReviewRunner(model="gemini-2.0-flash-exp", quiet=True)
+    runner = VirtualReviewRunner(model="claude-haiku-4-5", quiet=True)
     
     # Mock repo tools
     runner._repo_tools = RepoTools("test", "repo", "abc123")
@@ -95,7 +95,7 @@ async def test_variable_state_accumulation():
     
     This tests the fix: repo_files should grow as more files are fetched.
     """
-    runner = VirtualReviewRunner(model="gemini-2.0-flash-exp", quiet=True)
+    runner = VirtualReviewRunner(model="claude-haiku-4-5", quiet=True)
     
     # Simulate initial state
     assert len(runner._repo_files) == 0, "Should start with empty repo_files"
@@ -115,7 +115,7 @@ async def test_variable_state_accumulation():
 @pytest.mark.asyncio
 async def test_deduplicate_tool_requests():
     """Test that duplicate tool requests are handled (don't fetch same file twice)."""
-    runner = VirtualReviewRunner(model="gemini-2.0-flash-exp", quiet=True)
+    runner = VirtualReviewRunner(model="claude-haiku-4-5", quiet=True)
     runner._repo_tools = RepoTools("test", "repo", "abc123")
     
     # Simulate already fetched file
@@ -160,7 +160,7 @@ SEARCH_CODE:import pandas
 @pytest.mark.asyncio
 async def test_tool_output_formats():
     """Test that tool outputs are in expected formats."""
-    runner = VirtualReviewRunner(model="gemini-2.0-flash-exp", quiet=True)
+    runner = VirtualReviewRunner(model="claude-haiku-4-5", quiet=True)
     
     # repo_files should be dict[str, str]
     runner._repo_files = {"path.py": "content"}

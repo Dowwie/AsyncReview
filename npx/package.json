@@ -22,7 +22,8 @@
         "pr",
         "code-review",
         "ai",
-        "gemini",
+        "claude",
+        "anthropic",
         "llm",
         "cli",
         "rlm"

@@ -160,7 +160,7 @@ Examples:
         "--model", "-m",
         type=str,
         default=None,
-        help="Model to use (e.g. gemini-3.0-pro-preview)",
+        help="Model to use (e.g. claude-sonnet-4-6)",
     )
     
     args = parser.parse_args()

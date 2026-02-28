@@ -11,16 +11,38 @@ from pathlib import Path
 import dspy
 from dspy.primitives.python_interpreter import PythonInterpreter
 
+import tenacity
+
 from .config import (
     CR_CACHE_DIR,
     MAIN_MODEL,
     MAX_ITERATIONS,
     MAX_LLM_CALLS,
+    RLM_MAX_RETRIES,
+    RLM_RETRY_BASE_WAIT,
+    RLM_RETRY_MAX_WAIT,
     SUB_MODEL,
     TRACES_DIR,
 )
 from .snapshot import build_snapshot
-from .types import CodebaseSnapshot, RLMTrace, TraceStep
+from .types import CodebaseSnapshot, DefensiveDict, RLMTrace, TraceStep
+
+RETRYABLE_PATTERNS = (
+    "overloaded",
+    "rate_limit",
+    "rate limit",
+    "529",
+    "500",
+    "503",
+    "server error",
+    "service unavailable",
+    "temporarily unavailable",
+)
+
+
+def _is_retryable(exc: BaseException) -> bool:
+    msg = str(exc).lower()
+    return any(p in msg for p in RETRYABLE_PATTERNS)
 
 
 def build_deno_command() -> list[str]:
@@ -187,13 +209,15 @@ def format_history(history: list[tuple[str, str]]) -> str:
 class CodebaseReviewRLM:
     """RLM-based codebase review engine."""
 
-    def __init__(self, on_step: Callable[[int, str, str], None] | None = None):
+    def __init__(self, on_step: Callable[[int, str, str], None] | None = None, cache: bool = True):
         """Initialize the RLM engine.
-        
+
         Args:
             on_step: Optional callback(step_num, reasoning, code) for UI updates
+            cache: Whether to use DSPy's LLM response cache
         """
         self.on_step = on_step
+        self.cache = cache
         self._rlm = None
         self._configured = False
 
@@ -202,22 +226,40 @@ class CodebaseReviewRLM:
         if self._configured:
             return
 
-        dspy.configure(lm=dspy.LM(MAIN_MODEL))
+        dspy.configure(lm=dspy.LM(MAIN_MODEL, cache=self.cache, num_retries=8))
 
-        # Create custom interpreter with Deno command that includes node_modules
-        # This is needed for Deno 2.x where pyodide is in local node_modules
         deno_command = build_deno_command()
         interpreter = PythonInterpreter(deno_command=deno_command)
 
+        sig = dspy.Signature(
+            "codebase, conversation_history, question -> answer, sources"
+        ).with_instructions(
+            f"You have {MAX_ITERATIONS} iterations. "
+            "Investigate and gather evidence in early iterations. "
+            "Reserve the final iteration to synthesize your complete answer. "
+            "Do not leave work unfinished."
+        )
+
         self._rlm = dspy.RLM(
-            signature="codebase, conversation_history, question -> answer, sources",
+            signature=sig,
             max_iterations=MAX_ITERATIONS,
             max_llm_calls=MAX_LLM_CALLS,
-            sub_lm=dspy.LM(SUB_MODEL),
+            sub_lm=dspy.LM(SUB_MODEL, cache=self.cache, num_retries=8),
             verbose=True,
             interpreter=interpreter,
         )
         self._configured = True
+
+    def _log_retry(self, retry_state: tenacity.RetryCallState):
+        exc = retry_state.outcome.exception()
+        wait = retry_state.next_action.sleep
+        attempt = retry_state.attempt_number
+        logging.getLogger(__name__).warning(
+            "RLM call failed (attempt %d/%d): %s — retrying in %.1fs",
+            attempt, RLM_MAX_RETRIES, exc, wait,
+        )
+        if self.on_step:
+            self.on_step(0, f"API error (attempt {attempt}/{RLM_MAX_RETRIES}), retrying in {wait:.0f}s...", "")
 
     def run(
         self,
@@ -225,6 +267,7 @@ class CodebaseReviewRLM:
         question: str,
         history: list[tuple[str, str]] | None = None,
         save_trace_file: bool = True,
+        snapshot: CodebaseSnapshot | None = None,
     ) -> tuple[str, list[str], RLMTrace]:
         """Run the RLM on a codebase with a question.
 
@@ -233,14 +276,15 @@ class CodebaseReviewRLM:
             question: The question to answer
             history: Optional conversation history as [(question, answer), ...]
             save_trace_file: Whether to save the trace to a file
+            snapshot: Pre-built snapshot to reuse (avoids rebuilding per question)
 
         Returns:
             Tuple of (answer, sources, trace)
         """
         self._ensure_configured()
 
-        # Build snapshot
-        snapshot = build_snapshot(repo_path)
+        if snapshot is None:
+            snapshot = build_snapshot(repo_path)
 
         # Create trace
         trace = RLMTrace(
@@ -254,14 +298,23 @@ class CodebaseReviewRLM:
         handler = setup_rlm_logging(trace_capture, self.on_step)
 
         try:
-            # Run RLM - use simple dict format (path -> content) like huberman example
-            result = self._rlm(
+            retryer = tenacity.Retrying(
+                retry=tenacity.retry_if_exception(_is_retryable),
+                wait=tenacity.wait_exponential_jitter(
+                    initial=RLM_RETRY_BASE_WAIT,
+                    max=RLM_RETRY_MAX_WAIT,
+                ),
+                stop=tenacity.stop_after_attempt(RLM_MAX_RETRIES),
+                before_sleep=self._log_retry,
+            )
+
+            result = retryer(
+                self._rlm,
                 codebase=snapshot.to_simple_dict(),
                 conversation_history=format_history(history or []),
                 question=question,
             )
 
-            # Extract results
             answer = getattr(result, "answer", str(result))
             sources = getattr(result, "sources", [])
             if isinstance(sources, str):
@@ -270,6 +323,11 @@ class CodebaseReviewRLM:
             trace.answer = answer
             trace.sources = sources
             trace.ended_at = datetime.now()
+
+        except tenacity.RetryError as e:
+            trace.error = f"Failed after {RLM_MAX_RETRIES} retries: {e.last_attempt.exception()}"
+            trace.ended_at = datetime.now()
+            raise type(e.last_attempt.exception())(trace.error) from e
 
         except Exception as e:
             trace.error = str(e)
@@ -282,6 +340,80 @@ class CodebaseReviewRLM:
             rlm_logger.removeHandler(handler)
 
             # Save trace
+            if save_trace_file:
+                save_trace(trace)
+
+        return answer, sources, trace
+
+    def run_with_context(
+        self,
+        context: dict[str, str] | DefensiveDict,
+        question: str,
+        save_trace_file: bool = True,
+    ) -> tuple[str, list[str], RLMTrace]:
+        """Run the RLM with arbitrary context instead of a repo snapshot.
+
+        Args:
+            context: Dict of {filename: content} passed as the codebase
+            question: The question to answer
+            save_trace_file: Whether to save the trace to a file
+
+        Returns:
+            Tuple of (answer, sources, trace)
+        """
+        self._ensure_configured()
+
+        trace = RLMTrace(
+            question=question,
+            repo_path="(context)",
+            started_at=datetime.now(),
+        )
+
+        trace_capture = TraceCapture(trace)
+        handler = setup_rlm_logging(trace_capture, self.on_step)
+
+        try:
+            retryer = tenacity.Retrying(
+                retry=tenacity.retry_if_exception(_is_retryable),
+                wait=tenacity.wait_exponential_jitter(
+                    initial=RLM_RETRY_BASE_WAIT,
+                    max=RLM_RETRY_MAX_WAIT,
+                ),
+                stop=tenacity.stop_after_attempt(RLM_MAX_RETRIES),
+                before_sleep=self._log_retry,
+            )
+
+            defensive_context = context if isinstance(context, DefensiveDict) else DefensiveDict(context)
+            result = retryer(
+                self._rlm,
+                codebase=defensive_context,
+                conversation_history="No previous conversation.",
+                question=question,
+            )
+
+            answer = getattr(result, "answer", str(result))
+            sources = getattr(result, "sources", [])
+            if isinstance(sources, str):
+                sources = [s.strip() for s in sources.split(",") if s.strip()]
+
+            trace.answer = answer
+            trace.sources = sources
+            trace.ended_at = datetime.now()
+
+        except tenacity.RetryError as e:
+            trace.error = f"Failed after {RLM_MAX_RETRIES} retries: {e.last_attempt.exception()}"
+            trace.ended_at = datetime.now()
+            raise type(e.last_attempt.exception())(trace.error) from e
+
+        except Exception as e:
+            trace.error = str(e)
+            trace.ended_at = datetime.now()
+            raise
+
+        finally:
+            rlm_logger = logging.getLogger("dspy.predict.rlm")
+            rlm_logger.removeHandler(handler)
+
             if save_trace_file:
                 save_trace(trace)
 

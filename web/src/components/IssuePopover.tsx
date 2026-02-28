@@ -136,7 +136,7 @@ export function IssuePopoverComponent({ issue, position, onClose }: IssuePopover
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {/* Gemini Sparkle Icon approximation */}
+                        {/* Sparkle Icon */}
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', color: '#2dd4bf' }}>
                             <path d="M12 2L14.4 7.2L19.6 9.6L14.4 12L12 17.2L9.6 12L4.4 9.6L9.6 7.2L12 2Z" fill="currentColor" />
                         </svg>

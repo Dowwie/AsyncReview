@@ -5,7 +5,7 @@
 ### Added
 - Initial OSS release
 - GitHub PR loading and diff viewing
-- Automatic bug detection with Gemini RLM
+- Automatic bug detection with Claude RLM
 - Interactive Q&A about code changes
 - Web UI with real-time streaming
 - CLI for terminal-based reviews

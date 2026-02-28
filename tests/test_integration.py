@@ -1,7 +1,7 @@
-"""Integration tests with real Gemini API calls.
+"""Integration tests with real Anthropic API calls.
 
 These tests require:
-1. GEMINI_API_KEY in .env
+1. ANTHROPIC_API_KEY in .env
 2. GITHUB_TOKEN in .env (for public repo access)
 
 Run with: uv run pytest tests/test_integration.py -v -s
@@ -16,8 +16,8 @@ import pytest
 
 # Skip all tests if no API key
 pytestmark = pytest.mark.skipif(
-    not os.getenv("GEMINI_API_KEY") and not os.path.exists(".env"),
-    reason="GEMINI_API_KEY not set"
+    not os.getenv("ANTHROPIC_API_KEY") and not os.path.exists(".env"),
+    reason="ANTHROPIC_API_KEY not set"
 )
 
 

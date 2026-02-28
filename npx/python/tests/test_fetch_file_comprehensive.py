@@ -94,7 +94,7 @@ async def test_3_tool_interception():
     print("TEST 3: Tool Interception Logic")
     print("="*80)
     
-    runner = VirtualReviewRunner(model="gemini-3-flash-preview", quiet=True)
+    runner = VirtualReviewRunner(model="claude-sonnet-4-6", quiet=True)
     
     # Set up repo tools for kmad/dspy
     runner._repo_tools = RepoTools("kmad", "dspy", "main")
@@ -146,7 +146,7 @@ async def test_4_variable_rebuild():
     print("TEST 4: Variable Rebuild Per Iteration")
     print("="*80)
     
-    runner = VirtualReviewRunner(model="gemini-3-flash-preview", quiet=True)
+    runner = VirtualReviewRunner(model="claude-sonnet-4-6", quiet=True)
     runner._ensure_configured()
     
     # Simulate what happens in the iteration loop
@@ -215,7 +215,7 @@ print("FETCH_FILE:dspy/predict/rlm.py")
 Then on the next step, check if 'dspy/predict/rlm.py' is in repo_files and print the first 500 characters.
 """
     
-    runner = VirtualReviewRunner(model="gemini-3-flash-preview", quiet=False)
+    runner = VirtualReviewRunner(model="claude-sonnet-4-6", quiet=False)
     
     # Intercept to see what happens
     original_acall = None
@@ -340,9 +340,9 @@ async def run_all_tests():
 
 if __name__ == "__main__":
     # Check for API key
-    if not os.getenv("GEMINI_API_KEY"):
-        print("ERROR: GEMINI_API_KEY not set")
-        print("Set it with: export GEMINI_API_KEY='your-key'")
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        print("ERROR: ANTHROPIC_API_KEY not set")
+        print("Set it with: export ANTHROPIC_API_KEY='your-key'")
         exit(1)
     
     success = asyncio.run(run_all_tests())

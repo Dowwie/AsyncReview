@@ -119,6 +119,28 @@ publish-update: check-gh $(RUNTIME_ARTIFACT)
 	@echo "==> Updated: https://github.com/AsyncFuncAI/AsyncReview/releases/tag/v$(VERSION)"
 
 # ============================================================
+# Local Codebase Analysis
+# ============================================================
+
+# Analyze mem0 repo - single pass runbook
+analyze-mem0:
+	@echo "==> Running adapter pattern runbook against mem0"
+	INCLUDE_GLOBS='mem0/**/*.py,tests/**/*.py,pyproject.toml,README.md' \
+	uv run cr ask --repo /Users/dgordon/projects/mem0 --runbook mem0.runbook
+
+# Iterative analysis - run, refine, repeat until convergence
+loop-mem0:
+	@echo "==> Starting iterative analysis loop for mem0"
+	INCLUDE_GLOBS='mem0/**/*.py,tests/**/*.py,pyproject.toml,README.md' \
+	./loop.sh /Users/dgordon/projects/mem0 mem0.runbook
+
+# Interactive Q&A against mem0 repo
+ask-mem0:
+	@echo "==> Starting interactive analysis of mem0"
+	INCLUDE_GLOBS='mem0/**/*.py,tests/**/*.py,pyproject.toml,README.md' \
+	uv run cr ask --repo /Users/dgordon/projects/mem0
+
+# ============================================================
 # Development Helpers
 # ============================================================
 
@@ -193,6 +215,11 @@ help:
 	@echo "Manual GitHub Release Commands:"
 	@echo "  make publish      - Create GitHub release with local artifact"
 	@echo "  make publish-update - Add artifact to existing release"
+	@echo ""
+	@echo "Analysis Commands:"
+	@echo "  make analyze-mem0  - Single pass runbook against mem0"
+	@echo "  make loop-mem0     - Iterative: run, refine, repeat until convergence"
+	@echo "  make ask-mem0      - Interactive Q&A on mem0 repo"
 	@echo ""
 	@echo "Dev Commands:"
 	@echo "  make build-npx    - Build TypeScript only"

@@ -8,7 +8,7 @@ from rich.table import Table
 from rich.text import Text
 from rich import box
 
-from .config import MAIN_MODEL, SUB_MODEL
+from .config import MAIN_MODEL, SUB_MODEL, LLM_PROVIDER
 from .types import RLMTrace
 
 console = Console()
@@ -81,10 +81,11 @@ def print_welcome(repo_path: str, file_count: int):
         Panel(
             f"""[bold cyan]Codebase Review Tool[/bold cyan]
 
-Powered by DSPy RLM + Gemini
+Powered by DSPy RLM
 
 [dim]• Repository: {repo_path}
 • Files indexed: {file_count}
+• Provider: {LLM_PROVIDER}
 • Models: {MAIN_MODEL} / {SUB_MODEL}
 • Conversational: follow-ups use context
 • Type 'help' for commands[/dim]""",

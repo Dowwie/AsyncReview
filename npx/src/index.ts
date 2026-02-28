@@ -22,8 +22,8 @@ program
     .option('--expert', 'Run expert code review (SOLID, Security, Performance, Code Quality)')
     .option('-o, --output <format>', 'Output format: text, markdown, json', 'text')
     .option('--quiet', 'Suppress progress output')
-    .option('-m, --model <model>', 'Model to use (e.g. gemini-3-pro-preview)')
-    .option('--api <key>', 'Gemini API key (defaults to GEMINI_API_KEY env var)')
+    .option('-m, --model <model>', 'Model to use (e.g. claude-sonnet-4-6)')
+    .option('--api <key>', 'Anthropic API key (defaults to ANTHROPIC_API_KEY env var)')
     .option('--github-token <token>', 'GitHub token for private repos (defaults to GITHUB_TOKEN env var)')
     .action(async (options) => {
         await runReview(options);

@@ -31,7 +31,7 @@ class VirtualReviewRunner:
         """Initialize the virtual runner.
         
         Args:
-            model: Override model (e.g. "gemini-3.0-pro-preview")
+            model: Override model (e.g. "claude-sonnet-4-6")
             quiet: If True, suppress progress output
             on_step: Optional callback for RLM step updates
         """
@@ -59,24 +59,20 @@ class VirtualReviewRunner:
             logging.getLogger(name).setLevel(logging.WARNING)
         
         # Configure DSPy with specified model
-        model_name = self.model
-        if not model_name.startswith("gemini/"):
-            model_name = f"gemini/{model_name}"
-        
-        dspy.configure(lm=dspy.LM(model_name))
-        
+        dspy.configure(lm=dspy.LM(self.model))
+
         # Create RLM with custom interpreter that has Deno 2.x fix
         from dspy.primitives.python_interpreter import PythonInterpreter
         from cr.rlm_runner import build_deno_command
-        
+
         deno_command = build_deno_command()
         interpreter = PythonInterpreter(deno_command=deno_command)
-        
+
         self._rlm = dspy.RLM(
             signature="context, question -> answer, sources",
             max_iterations=MAX_ITERATIONS,
             max_llm_calls=MAX_LLM_CALLS,
-            sub_lm=dspy.LM(f"gemini/{SUB_MODEL}" if not SUB_MODEL.startswith("gemini/") else SUB_MODEL),
+            sub_lm=dspy.LM(SUB_MODEL),
             verbose=not self.quiet,
             interpreter=interpreter,
         )

@@ -311,7 +311,7 @@ export async function runPythonReview(options: RunOptions): Promise<string> {
             cwd: PYTHON_CODE_ROOT,
             env: {
                 ...process.env,
-                GEMINI_API_KEY: options.apiKey,
+                ANTHROPIC_API_KEY: options.apiKey,
                 ...(options.githubToken && { GITHUB_TOKEN: options.githubToken }),
                 PYTHONPATH: pythonPath,
                 // Ensure we don't inherit conflicting python env vars

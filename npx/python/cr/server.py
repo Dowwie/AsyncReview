@@ -16,7 +16,7 @@ from .github import get_cached_pr, get_file_contents, load_pr
 
 app = FastAPI(
     title="CR Review API",
-    description="API for GitHub PR code review with Gemini RLM",
+    description="API for GitHub PR code review with Claude RLM",
     version="0.1.0",
 )
 

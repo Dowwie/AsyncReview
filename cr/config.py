@@ -7,11 +7,35 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # LLM Configuration
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-MAIN_MODEL = os.getenv("MAIN_MODEL", "gemini/gemini-3-pro-preview")
-SUB_MODEL = os.getenv("SUB_MODEL", "gemini/gemini-3-flash-preview")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+
+# Provider presets: "anthropic" (default) or "openrouter"
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "anthropic").lower()
+
+_PROVIDER_PRESETS = {
+    "anthropic": {
+        "main": "anthropic/claude-sonnet-4-6",
+        "sub": "anthropic/claude-haiku-4-5",
+    },
+    "openrouter": {
+        # "main": "openrouter/moonshotai/kimi-k2.5",
+        "main": "openrouter/z-ai/glm-5",
+        # "sub": "openrouter/moonshotai/kimi-k2.5",
+        "sub": "openrouter/z-ai/glm-5",
+    },
+}
+
+_preset = _PROVIDER_PRESETS.get(LLM_PROVIDER, _PROVIDER_PRESETS["anthropic"])
+MAIN_MODEL = os.getenv("MAIN_MODEL", _preset["main"])
+SUB_MODEL = os.getenv("SUB_MODEL", _preset["sub"])
 MAX_ITERATIONS = int(os.getenv("MAX_ITERATIONS", "20"))
-MAX_LLM_CALLS = int(os.getenv("MAX_LLM_CALLS", "25"))
+MAX_LLM_CALLS = int(os.getenv("MAX_LLM_CALLS", "20"))
+
+# Retry configuration for transient API errors (overloaded, rate limit, 5xx)
+RLM_MAX_RETRIES = int(os.getenv("RLM_MAX_RETRIES", "8"))
+RLM_RETRY_BASE_WAIT = float(os.getenv("RLM_RETRY_BASE_WAIT", "2"))
+RLM_RETRY_MAX_WAIT = float(os.getenv("RLM_RETRY_MAX_WAIT", "60"))
 
 # Repo snapshot constraints
 MAX_FILE_BYTES = int(os.getenv("MAX_FILE_BYTES", "200000"))  # 200KB per file

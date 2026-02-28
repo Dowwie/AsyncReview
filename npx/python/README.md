@@ -43,7 +43,7 @@ https://github.com/user-attachments/assets/e17951e6-d73d-4cc0-8199-66c7e02f049f
    cp .env.example .env
    ```
    **Required variables:**
-   - `GEMINI_API_KEY`: Your Google Gemini API key.
+   - `ANTHROPIC_API_KEY`: Your Anthropic API key.
    - `GITHUB_TOKEN`: GitHub Token (for PR access & higher rate limits).
 
 ## Running
@@ -93,7 +93,7 @@ asyncreview review --url https://github.com/org/repo/pull/123 \
 # Use a specific model
 asyncreview review --url https://github.com/org/repo/pull/123 \
   -q "Deep code review" \
-  --model gemini-3.0-pro-preview
+  --model claude-sonnet-4-6
 ```
 
 **Options:**

@@ -1,8 +1,30 @@
 """Type definitions for the codebase review tool."""
 
+import logging
 from dataclasses import dataclass, field
-from typing import TypedDict, Literal
 from datetime import datetime
+from typing import Literal, TypedDict
+
+logger = logging.getLogger(__name__)
+
+
+class DefensiveDict(dict):
+    """Dict that returns an error message for missing keys instead of raising KeyError.
+
+    When the RLM's generated code accesses a file path that doesn't exist
+    in the snapshot, this returns a descriptive message the agent can
+    reason about, rather than crashing the execution loop.
+    """
+
+    def __missing__(self, key: str) -> str:
+        available = ", ".join(sorted(self.keys())[:20])
+        truncated = " ..." if len(self) > 20 else ""
+        msg = (
+            f"[ERROR] File not found: '{key}'. "
+            f"Available files ({len(self)} total): {available}{truncated}"
+        )
+        logger.warning("DefensiveDict miss: %s", key)
+        return msg
 
 
 class FileInfo(TypedDict):
@@ -36,13 +58,14 @@ class CodebaseSnapshot:
     files: dict[str, FileInfo]  # path -> file info
     tags: dict[str, list[SymbolTag]] = field(default_factory=dict)  # path -> tags
 
-    def to_simple_dict(self) -> dict[str, str]:
-        """Convert to simple dict of path -> content for RLM.
+    def to_simple_dict(self) -> DefensiveDict:
+        """Convert to defensive dict of path -> content for RLM.
 
-        This is the format DSPy RLM works best with - a flat dictionary
-        where keys are file paths and values are file contents as strings.
+        Returns a DefensiveDict that handles missing keys gracefully,
+        returning an error message the agent can reason about instead
+        of raising KeyError and crashing the execution loop.
         """
-        result = {}
+        result = DefensiveDict()
         for path, info in self.files.items():
             content = "\n".join(info["text_lines"])
             result[path] = content

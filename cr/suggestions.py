@@ -15,7 +15,7 @@ class SuggestionSignature(dspy.Signature):
 class SuggestionGenerator(dspy.Module):
     def __init__(self):
         super().__init__()
-        # Use SUB_MODEL (likely a faster/cheaper model like Gemini Flash)
+        # Use SUB_MODEL (likely a faster/cheaper model like Claude Haiku)
         self.generate = dspy.Predict(SuggestionSignature)
         
     def forward(self, pr_info: PRInfo, conversation: list[dict], last_answer: str):

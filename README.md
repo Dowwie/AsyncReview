@@ -64,10 +64,10 @@ npx skills add AsyncFuncAI/AsyncReview
 
 ### Public Repositories
 
-For public repos, you only need a Gemini API key.
+For public repos, you only need an Anthropic API key.
 
 ```bash
-export GEMINI_API_KEY="your-key"
+export ANTHROPIC_API_KEY="your-key"
 npx asyncreview review --url https://github.com/org/repo/pull/123 -q "Review this"
 ```
 
@@ -92,7 +92,7 @@ For private repos, you also need a GitHub token.
 ## Configuration
 
 **Required:**
-- **Gemini API Key:** Get one from Google AI Studio. Set as `GEMINI_API_KEY`.
+- **Anthropic API Key:** Get one from the Anthropic Console. Set as `ANTHROPIC_API_KEY`.
 
 **Optional:**
 - **GitHub Token:** Required for private repositories to access file contents. Set as `GITHUB_TOKEN`.

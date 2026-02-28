@@ -1,0 +1,40 @@
+# AsyncReview Runbook: Adapter Pattern Deep Dive
+# Target: mem0 vector store backends
+# Usage: make analyze-mem0
+
+# Phase 1: Orient - Understand the project and its structure
+What is this project? What problem does it solve and how is the codebase organized at a high level?
+How does this project handle pluggable backends or providers? What extension points exist for databases, vector stores, or storage?
+
+# Phase 2: Identify the Contract
+What interface or base abstraction do vector store backends implement? What are the method signatures and return types?
+What data types, models, or structures are used to pass data in and out of vector store methods? How are results normalized across different backends?
+
+# Phase 3: Trace Configuration and Instantiation
+How does a user specify which vector store backend to use? What does the configuration look like?
+How does the system validate, resolve, and instantiate a vector store from configuration? Trace the full path from user config to a live backend instance.
+
+# Phase 4: Study a Concrete Implementation
+Walk through one concrete vector store implementation end-to-end. How does it handle initialization, connections, queries, inserts, deletes, and cleanup?
+What provider-specific concerns does this implementation handle that the base abstraction doesn't account for?
+
+# Phase 5: Examine Error Handling and Lifecycle
+How do vector store backends handle errors? Are there shared exception types, or does each backend handle failures independently?
+What lifecycle concerns exist - connection management, resource cleanup, reconnection, or graceful shutdown?
+
+# Phase 6: Understand the Test Patterns
+How are vector store backends tested? Is there a shared test structure, or are tests independent per backend?
+What mocking or fixture patterns are used to isolate tests from real database connections?
+
+# Phase 7: Produce the Integration Guide
+Based on everything we've discussed, produce a step-by-step integration guide for adding a new vector store backend to this project. Cover every file to create, every file to modify, every registration point, config class, and test requirement. The guide should be self-contained.  Include a checklist at the end.
+
+# Phase 8: Validate Against Existing Implementation
+Using the integration guide you just produced, walk through the existing Qdrant implementation step by step. For each step in the guide, verify it matches what Qdrant actually did. Flag any steps that are missing, wrong, or incomplete. If Qdrant does something the guide doesn't cover, that's a gap in the guide.
+
+# Phase 9: Revise the Integration Guide
+You just identified specific gaps and inaccuracies in the integration guide by comparing it against the Qdrant implementation. Now revise the guide to incorporate every finding. Correct the inaccuracies, add the missing steps, and remove anything that doesn't reflect how integrations are actually built in this project. Produce the complete revised guide.
+
+
+
+Using the integration guide you just produced, walk through the existing sqlite implementation step by step. For each step in the guide, verify it matches what sqlite actually did. Flag any steps that are missing, wrong, or incomplete.  If sqlite does something the guide doesn't cover, that's a gap in the guide.

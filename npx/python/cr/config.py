@@ -7,9 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # LLM Configuration
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-MAIN_MODEL = os.getenv("MAIN_MODEL", "gemini/gemini-3-pro-preview")
-SUB_MODEL = os.getenv("SUB_MODEL", "gemini/gemini-3-flash-preview")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+MAIN_MODEL = os.getenv("MAIN_MODEL", "anthropic/claude-sonnet-4-6")
+SUB_MODEL = os.getenv("SUB_MODEL", "anthropic/claude-haiku-4-5")
 MAX_ITERATIONS = int(os.getenv("MAX_ITERATIONS", "20"))
 MAX_LLM_CALLS = int(os.getenv("MAX_LLM_CALLS", "25"))
 

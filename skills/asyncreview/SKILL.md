@@ -18,7 +18,7 @@ Use this skill when the user:
 
 ## How to use this skill
 
-1. **Check prerequisites** — Verify `GEMINI_API_KEY` is set
+1. **Check prerequisites** — Verify `ANTHROPIC_API_KEY` is set
 2. **Check if repo is private** — Use `gh repo view` to determine if `GITHUB_TOKEN` is required
 3. **Set GITHUB_TOKEN if needed** — Use `gh auth token` for private repos
 4. **Get the PR/Issue URL** — Ask user if not provided
@@ -28,20 +28,20 @@ Use this skill when the user:
 
 ## Prerequisites
 
-### 1. Check for `GEMINI_API_KEY` (Required)
+### 1. Check for `ANTHROPIC_API_KEY` (Required)
 
-**Before running any command, check for `GEMINI_API_KEY`:**
+**Before running any command, check for `ANTHROPIC_API_KEY`:**
 
 ```bash
-echo $GEMINI_API_KEY
+echo $ANTHROPIC_API_KEY
 ```
 
-If empty or not set, ask the user to provide their Gemini API key:
-> "AsyncReview requires a Gemini API key. Please set `GEMINI_API_KEY` in your environment or provide it now."
+If empty or not set, ask the user to provide their Anthropic API key:
+> "AsyncReview requires an Anthropic API key. Please set `ANTHROPIC_API_KEY` in your environment or provide it now."
 
 Then set it:
 ```bash
-export GEMINI_API_KEY="user-provided-key"
+export ANTHROPIC_API_KEY="user-provided-key"
 ```
 
 ### 2. Check if Repository is Private (Critical)
@@ -174,7 +174,7 @@ npx asyncreview review --url <url> -q "q" -o json     # JSON output
 ## Environment variables
 
 ```bash
-GEMINI_API_KEY="your-key"         # Required: Google Gemini API key
+ANTHROPIC_API_KEY="your-key"      # Required: Anthropic API key
 GITHUB_TOKEN="ghp_xxx"            # Optional: For private repos / higher rate limits
 ```
 

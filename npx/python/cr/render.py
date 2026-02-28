@@ -81,7 +81,7 @@ def print_welcome(repo_path: str, file_count: int):
         Panel(
             f"""[bold cyan]Codebase Review Tool[/bold cyan]
 
-Powered by DSPy RLM + Gemini
+Powered by DSPy RLM + Claude
 
 [dim]• Repository: {repo_path}
 • Files indexed: {file_count}
